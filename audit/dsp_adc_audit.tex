@@ -1,0 +1,35 @@
+\documentclass[11pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\title{Auditoría DSP y ADC para plataforma ECG ESP32}
+\date{2026-06-14}
+\begin{document}
+\maketitle
+\section{Conclusión ejecutiva}
+El firmware ya tiene una arquitectura separada en ADC, DSP, BLE y display, pero no debe considerarse todavía una cadena biomédica validada. La configuración actual declara \texttt{ADC\_SAMPLE\_RATE\_HZ=20000} y \texttt{OVERSAMPLE\_FACTOR=64}, por lo que la frecuencia nominal de salida es $20000/64=312.5$ SPS, no 500 SPS. Los coeficientes notch fueron calculados y comentados para 500 Hz; si se ejecutan a 312.5 SPS, las muescas reales se desplazan. Esta fase deja preparado el proyecto para medición temporal, recalibración de filtros y denoising.
+
+\section{Respuestas obligatorias}
+\begin{enumerate}
+\item \textbf{¿Por qué fue necesario aumentar ADC\_SAMPLE\_RATE\_HZ hasta aproximadamente 20000 SPS para que ADC Continuous funcionara?}  En ESP32 clásico el controlador continuo usa el periférico digital/I2S-DMA y no se comporta como un simple temporizador de baja frecuencia. En la práctica del proyecto, tasas bajas causaban ausencia de datos o flujo inestable; subir a 20 kSPS aumenta la cadencia DMA, llena marcos de conversión rápidamente y evita timeouts perceptibles. Esta es una decisión operativa, no una garantía de exactitud temporal.
+\item \textbf{¿Existe una limitación documentada del driver ADC Continuous en ESP32 clásico?}  Sí. La documentación de Espressif indica que el modo continuo está limitado por el controlador digital ADC, el formato de salida y la variante SoC; además, ADC2 comparte recursos con Wi-Fi y se recomienda ADC1 para evitar conflictos. Para esta placa se usa ADC1. Véase la documentación oficial de Espressif sobre ``ADC Continuous Mode Driver'' y las notas por SoC.
+\item \textbf{¿La frecuencia de salida real coincide con ADC\_SAMPLE\_RATE\_HZ / OVERSAMPLE\_FACTOR o existe desviación temporal?}  Nominalmente debe coincidir con esa razón si el driver entrega exactamente la frecuencia solicitada y no hay pérdidas en colas. Sin instrumentación de timestamps de hardware no puede afirmarse coincidencia real. La GUI ahora estima SPS recibido por BLE, pero esa medición incluye latencia y empaquetado BLE.
+\item \textbf{¿Cuál es la frecuencia de muestreo efectiva observada?}  La frecuencia efectiva nominal del firmware actual es $312.5$ SPS. La frecuencia observada debe registrarse con la GUI o con contadores temporizados en firmware; esta auditoría marca esa medición como pendiente experimental porque el repositorio no contiene logs de adquisición cronometrados.
+\item \textbf{¿La implementación actual realmente produce oversampling válido?}  Produce promediado y decimación por bloques: acumula 64 conversiones consecutivas y emite su media. Esto es un sobremuestreo válido sólo si las conversiones originales contienen ruido/dither suficiente, no están saturadas y existe filtrado anti-aliasing analógico o digital apropiado antes de diezmar. Actualmente el promedio móvil es un filtro CIC de primer orden; no basta por sí solo como antialias robusto para investigación biomédica.
+\item \textbf{¿Cuánta mejora teórica de resolución produce el sobremuestreo configurado?}  Para OSR=64, la mejora ideal es $0.5\log_2(64)=3$ bits. Un ADC ideal de 12 bits podría aproximarse a 15 bits efectivos, pero el ADC SAR del ESP32 no es ideal y su ENOB real puede ser bastante menor.
+\item \textbf{¿Los filtros notch realmente atenúan 50 Hz, 100 Hz y 150 Hz?}  Sólo si la señal llega al DSP a 500 SPS. Los coeficientes actuales tienen ceros calculados para $F_s=500$ Hz. Con $F_s=312.5$ SPS, las muescas se desplazan aproximadamente a 31.25 Hz, 62.5 Hz y 93.75 Hz. Por tanto, con la configuración actual no atenúan correctamente 50/100/150 Hz.
+\item \textbf{¿Qué método de discretización se utilizó para generar los coeficientes IIR?}  No se usó una transformación bilineal de un prototipo analógico. Se usó la formulación digital ``RBJ audio EQ cookbook'' para un notch biquad: ceros en $e^{\pm j\omega_0}$ y polos controlados por $Q$, con $\alpha=\sin(\omega_0)/(2Q)$ y normalización por $a_0$.
+\item \textbf{¿La implementación preserva estabilidad numérica en int16\_t?}  El filtrado interno se hace en \texttt{float}; \texttt{int16\_t} sólo se usa en entrada/salida y hay saturación al final. Esto evita overflow entero dentro del IIR. Sin embargo, la forma directa II transpuesta es sensible a coeficientes, acumulación de error y estados no reinicializados; para investigación se recomienda validar polos, respuesta en frecuencia, pruebas con senos y considerar biquads en cascada con estados en \texttt{float} o \texttt{double} durante calibración.
+\item \textbf{¿Qué limitaciones tiene el ADC del ESP32 para ECG biomédico?}  El ADC integrado del ESP32 tiene no linealidad, variación entre chips, ruido, dependencia de atenuación, referencia imprecisa, impedancia de entrada limitada, sensibilidad a ruido digital/RF y no ofrece aislamiento de paciente ni certificación médica. Para ECG biomédico se requiere front-end analógico seguro, protección, aislamiento, filtro antialias, calibración y, preferiblemente, un AFE/ADC dedicado como ADS129x para medición seria.
+\end{enumerate}
+
+\section{Acciones para la siguiente etapa}
+\begin{itemize}
+\item Medir SPS real en firmware con contador por segundo y marca temporal monotónica.
+\item Alinear \texttt{SAMPLE\_RATE} de Python, \texttt{OUTPUT\_SAMPLE\_RATE\_HZ} y coeficientes DSP.
+\item Regenerar notch para la tasa efectiva o cambiar OSR a 40 si se mantiene 20 kSPS para obtener 500 SPS.
+\item Agregar pruebas offline de respuesta en frecuencia antes de denoising.
+\end{itemize}
+\end{document}
