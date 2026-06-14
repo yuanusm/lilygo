@@ -1,0 +1,81 @@
+\documentclass[11pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{hyperref}
+\title{Documentación técnica del proyecto LilyGO ECG}
+\date{2026-06-14}
+\begin{document}
+\maketitle
+\section{Mapa jerárquico}
+\begin{verbatim}
+ECG_TDisplay_ESP32.ino
+|--- setup
+|  |--- rawBuffer.begin / filteredBuffer.begin
+|  |--- xQueueCreate(adcQueue, dspQueue, bleQueue, displayQueue)
+|  |--- startBleTask -> TaskBLE
+|  |--- startDisplayTask -> TaskDisplay
+|  |--- startDspTask -> TaskDSP
+|  `--- startAdcTask -> TaskADC
+`--- loop -> vTaskDelay
+
+TaskADC
+`--- configureAdcContinuous -> adc_continuous_new_handle/config/start
+   `--- promedio OSR -> dspQueue
+TaskDSP
+|--- Biquad notch50/100/150
+|--- rawBuffer / filteredBuffer
+|--- bleQueue
+`--- displayQueue
+TaskBLE
+|--- NimBLE server/service/characteristics
+|--- CommandCallbacks -> streamMode / sendBuffer
+`--- notifications desde bleQueue
+TaskDisplay
+`--- LovyanGFX ST7789 desde displayQueue
+Python ecg_ble_viewer.py
+|--- BleakScanner/BleakClient
+|--- Tkinter GUI
+|--- ECG temporal
+|--- FFT tiempo real
+`--- grabación CSV temporizada
+\end{verbatim}
+
+\section{Dependencias cruzadas}
+\begin{longtable}{p{0.25\linewidth}p{0.65\linewidth}}
+\textbf{Módulo} & \textbf{Depende de / entrega a}\\\hline
+\texttt{config.h} & Define pines, tasas, tamaños de cola, UUIDs, estructuras y handles globales usados por todos los módulos de firmware.\\
+\texttt{adc\_task.cpp} & Recibe muestras de \texttt{esp\_adc/adc\_continuous}; entrega \texttt{DecimatedSample} a \texttt{dspQueue}.\\
+\texttt{dsp\_task.cpp} & Recibe \texttt{DecimatedSample}; entrega \texttt{ProcessedSample} a BLE, display y buffers circulares.\\
+\texttt{ble\_task.cpp} & Recibe comandos BLE y muestras procesadas; depende de \texttt{sample\_buffer} para snapshots.\\
+\texttt{display\_task.cpp} & Consume la última muestra procesada por \texttt{displayQueue}; depende de LovyanGFX.\\
+\texttt{sample\_buffer.cpp} & Recibe muestras de DSP; entrega snapshots cronológicos a BLE.\\
+\texttt{ecg\_ble\_viewer.py} & Consume notificaciones BLE; entrega visualización temporal, FFT, energía por frecuencia y CSV.\\
+\end{longtable}
+
+\section{Archivos y funciones}
+\subsection{Firmware}
+\paragraph{ECG\_TDisplay\_ESP32.ino} Punto de entrada Arduino. Existe para inicializar hardware, buffers, colas FreeRTOS y tareas. \texttt{setup()} no recibe parámetros y no retorna valor; crea los recursos globales. \texttt{loop()} sólo duerme porque el trabajo vive en tareas FreeRTOS.
+\paragraph{config.h} Cabecera central. No ejecuta lógica; entrega constantes, estructuras \texttt{AdcBlock}, \texttt{DecimatedSample}, \texttt{ProcessedSample}, enumeración \texttt{StreamMode} y declaraciones globales. Todos los módulos dependen de este archivo.
+\paragraph{adc\_task.h/cpp} \texttt{startAdcTask()} crea \texttt{TaskADC}. \texttt{configureAdcContinuous()} configura DMA ADC1 canal 0, atenuación 12 dB y 12 bits. \texttt{taskAdc()} recibe tramas DMA, acumula \texttt{OVERSAMPLE\_FACTOR} muestras, emite una media e incrementa índice.
+\paragraph{dsp\_task.h/cpp} \texttt{Biquad} implementa un filtro IIR de segundo orden en forma directa II transpuesta. \texttt{process(x)} recibe una muestra flotante y entrega una muestra filtrada. \texttt{clampToInt16()} satura el resultado. \texttt{taskDsp()} centra la muestra ADC, aplica tres notch, actualiza buffers y colas. \texttt{startDspTask()} crea \texttt{TaskDSP}.
+\paragraph{ble\_task.h/cpp} Usa NimBLE-Arduino. \texttt{ServerCallbacks} mantiene estado de conexión y reinicia advertising. \texttt{CommandCallbacks} interpreta comandos ASCII. \texttt{notifyText()} entrega respuestas cortas. \texttt{sendBuffer()} transmite snapshots. \texttt{taskBle()} crea servidor, servicio, características y empaqueta muestras para notificación. \texttt{startBleTask()} crea \texttt{TaskBLE}.
+\paragraph{display\_task.h/cpp} Usa LovyanGFX. \texttt{LGFX} encapsula panel ST7789 y bus SPI. \texttt{taskDisplay()} inicializa backlight/TFT, muestra estado BLE y dibuja ECG filtrado. \texttt{startDisplayTask()} crea \texttt{TaskDisplay}.
+\paragraph{sample\_buffer.h/cpp} \texttt{CircularSampleBuffer::begin()} limpia el buffer. \texttt{push(sample)} inserta una muestra con sección crítica. \texttt{snapshot(dest,maxSamples)} copia en orden cronológico hasta el máximo solicitado. \texttt{capacity()} entrega la capacidad.
+
+\subsection{Aplicación Python}
+\paragraph{python\_app/ecg\_ble\_viewer.py} GUI de investigación. \texttt{EcgBleApp} coordina Tkinter, Bleak, almacenamiento y gráficos. \texttt{scan/connect/disconnect/send} gestionan BLE. \texttt{\_notification} decodifica \texttt{int16\_t} little-endian. \texttt{\_draw} refresca ECG temporal y FFT. \texttt{\_compute\_fft} aplica ventana Hann y FFT real con NumPy. \texttt{start\_timed\_recording} y \texttt{finish\_timed\_recording} implementan grabación automática de 1 o 5 minutos. \texttt{export\_csv/write\_csv} guardan muestras.
+\paragraph{python\_app/requirements.txt} Declara \texttt{bleak} para BLE y \texttt{numpy} para FFT.
+
+\section{Librerías utilizadas}
+\begin{itemize}
+\item Arduino core ESP32: arranque, GPIO, FreeRTOS y compatibilidad Arduino.
+\item ESP-IDF ADC continuous: adquisición ADC por DMA.
+\item FreeRTOS: tareas, colas, delays y secciones críticas.
+\item NimBLE-Arduino: servidor BLE GATT y notificaciones.
+\item LovyanGFX: control de pantalla ST7789 por SPI.
+\item Tkinter: interfaz de escritorio Python.
+\item Bleak: cliente BLE multiplataforma.
+\item NumPy: FFT y operaciones vectoriales.
+\end{itemize}
+\end{document}
