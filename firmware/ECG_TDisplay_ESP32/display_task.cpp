@@ -8,7 +8,7 @@ class LGFX : public lgfx::LGFX_Device {
  public:
   LGFX() {
     auto busConfig = bus_.config();
-    busConfig.spi_host = VSPI_HOST;
+    busConfig.spi_host = SPI2_HOST;;
     busConfig.spi_mode = 0;
     busConfig.freq_write = 40000000;
     busConfig.pin_sclk = TFT_SCLK_PIN;

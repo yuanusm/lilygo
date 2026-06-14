@@ -61,7 +61,7 @@ static void taskBle(void *) {
   service->start();
   NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
   adv->addServiceUUID(service->getUUID());
-  adv->setScanResponse(true);
+  //adv->setScanResponse(true);
   adv->start();
 
   ProcessedSample s;

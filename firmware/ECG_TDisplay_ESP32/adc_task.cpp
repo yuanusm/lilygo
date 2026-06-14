@@ -1,6 +1,6 @@
 #include "adc_task.h"
 #include "config.h"
-#include "driver/adc.h"
+//#include "driver/adc.h"
 #include "esp_adc/adc_continuous.h"
 
 static adc_continuous_handle_t adcHandle = nullptr;
@@ -10,7 +10,7 @@ static void configureAdcContinuous() {
     .max_store_buf_size = 2048,
     .conv_frame_size = 512,
   };
-  ESP_ERROR_CHECK(adc_continuous_new_handle(&handleConfig, &adcHandle));
+
 
   adc_continuous_config_t adcConfig = {};
   adcConfig.sample_freq_hz = ADC_SAMPLE_RATE_HZ;
@@ -18,12 +18,25 @@ static void configureAdcContinuous() {
   adcConfig.format = ADC_DIGI_OUTPUT_FORMAT_TYPE1;
 
   adc_digi_pattern_config_t pattern = {};
-  pattern.atten = ADC_ATTEN_DB_11;
-  pattern.channel = ADC_CHANNEL_6;  // GPIO34 on ADC1.
+  pattern.atten = ADC_ATTEN_DB_12;
+  pattern.bit_width = ADC_BITWIDTH_12;
+  pattern.channel = ADC_CHANNEL_0;  // GPIO36 on ADC1.
   pattern.unit = ADC_UNIT_1;
-  pattern.bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
+  //pattern.bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
   adcConfig.pattern_num = 1;
   adcConfig.adc_pattern = &pattern;
+
+  Serial.printf("sample_freq=%lu\n", adcConfig.sample_freq_hz);
+  Serial.printf("pattern_num=%d\n", adcConfig.pattern_num);
+  Serial.printf("channel=%d\n", pattern.channel);
+  Serial.printf("atten=%d\n", pattern.atten);
+  Serial.printf("bitwidth=%d\n", pattern.bit_width);
+
+  ESP_ERROR_CHECK(adc_continuous_new_handle(&handleConfig, &adcHandle));
+
+  
+
+  
   ESP_ERROR_CHECK(adc_continuous_config(adcHandle, &adcConfig));
 }
 
@@ -42,7 +55,7 @@ static void taskAdc(void *) {
     if (ret != ESP_OK && ret != ESP_ERR_TIMEOUT) continue;
     for (uint32_t i = 0; i + sizeof(adc_digi_output_data_t) <= bytesRead; i += sizeof(adc_digi_output_data_t)) {
       adc_digi_output_data_t *p = reinterpret_cast<adc_digi_output_data_t *>(&result[i]);
-      if (p->type1.channel != ADC_CHANNEL_6) continue;
+      if (p->type1.channel != ADC_CHANNEL_0) continue;
       acc += p->type1.data;
       if (++osrCount == OVERSAMPLE_FACTOR) {
         DecimatedSample out{static_cast<int16_t>(acc / OVERSAMPLE_FACTOR), sampleIndex++};

@@ -8,12 +8,12 @@ static constexpr uint8_t TFT_SCLK_PIN = 18;
 static constexpr uint8_t TFT_CS_PIN = 5;
 static constexpr uint8_t TFT_DC_PIN = 16;
 static constexpr uint8_t TFT_BL_PIN = 4;
-static constexpr uint8_t ADC_IN_PIN = 34;
+static constexpr uint8_t ADC_IN_PIN = 36;
 static constexpr uint8_t BUTTON1_PIN = 35;
 static constexpr uint8_t BUTTON2_PIN = 0;
 static constexpr uint8_t ADC_POWER_PIN = 14;
 
-static constexpr uint32_t ADC_SAMPLE_RATE_HZ = 8000;
+static constexpr uint32_t ADC_SAMPLE_RATE_HZ = 19000;
 static constexpr uint16_t OVERSAMPLE_FACTOR = 16;
 static constexpr uint32_t OUTPUT_SAMPLE_RATE_HZ = ADC_SAMPLE_RATE_HZ / OVERSAMPLE_FACTOR;
 static constexpr size_t ECG_BUFFER_SAMPLES = OUTPUT_SAMPLE_RATE_HZ * 5;
