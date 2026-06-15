@@ -39,7 +39,7 @@ static void taskDisplay(void *) {
   tft.init();
   tft.setRotation(1);
   tft.fillScreen(TFT_BLACK);
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
+  tft.setTextColor(TFT_RED, TFT_BLACK);
 
   int x = 0;
   int lastY = 67;
@@ -49,7 +49,7 @@ static void taskDisplay(void *) {
     if (x % 20 == 0) {
       tft.fillRect(0, 0, 240, 15, TFT_BLACK);
       tft.setCursor(0, 0);
-      tft.printf("BLE:%s 500SPS", bleConnected ? "ON" : "OFF");
+      tft.printf("BLE:%s %i SPS", bleConnected ? "ON" : "OFF", OUTPUT_SAMPLE_RATE_HZ);
     }
     if (xQueueReceive(displayQueue, &s, pdMS_TO_TICKS(40)) == pdTRUE) {
       const int y = constrain(75 - (s.filtered / 45), 18, 133);

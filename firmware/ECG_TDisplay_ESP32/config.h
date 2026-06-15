@@ -14,7 +14,7 @@ static constexpr uint8_t BUTTON2_PIN = 0;
 static constexpr uint8_t ADC_POWER_PIN = 14;
 
 static constexpr uint32_t ADC_SAMPLE_RATE_HZ = 20000;
-static constexpr uint16_t OVERSAMPLE_FACTOR = 64;
+static constexpr uint16_t OVERSAMPLE_FACTOR = 20;
 static constexpr uint32_t OUTPUT_SAMPLE_RATE_HZ = ADC_SAMPLE_RATE_HZ / OVERSAMPLE_FACTOR;
 static constexpr size_t ECG_BUFFER_SAMPLES = OUTPUT_SAMPLE_RATE_HZ * 5;
 

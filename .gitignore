@@ -1,3 +1,11 @@
 __pycache__/
 *.py[cod]
 .venv/
+audit/dsp_adc_audit.aux
+audit/dsp_adc_audit.log
+audit/dsp_adc_audit.out
+audit/dsp_adc_audit.synctex.gz
+documentation/project_documentation.aux
+documentation/project_documentation.log
+documentation/project_documentation.out
+documentation/project_documentation.synctex.gz
