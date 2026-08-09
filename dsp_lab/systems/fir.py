@@ -22,13 +22,33 @@ class FIRFilter(DiscreteTimeSystem):
             raise ValueError("coefficients no puede estar vacío")
         self.b = coefficients
 
-    def process(self, x: List[float]) -> List[float]:
-        """Aplica la ecuación FIR.
+    """def process(self, x: List[float]) -> List[float]:
+        Aplica la ecuación FIR.
 
         Ecuación objetivo:
             y[n] = sum_{k=0}^{M-1} b[k] * x[n-k]
 
         TODO: implementar manualmente la convolución, sin usar `scipy.signal`.
-        """
+        
         y = [0.0 for _ in x]
+        return y"""
+    def process(self, x: List[float]) -> List[float]:
+    #"""Aplica la ecuación FIR de forma directa."""
+
+        M = len(self.b)
+        N = len(x)
+
+        y = [0.0] * N
+
+        # Recorre cada muestra de salida
+        for n in range(N):
+            acc = 0.0
+
+            # convolución manual
+            for k in range(M):
+                if n - k >= 0:
+                    acc += self.b[k] * x[n - k]
+
+            y[n] = acc
+
         return y

@@ -47,10 +47,10 @@ def experiment_spectral_analysis() -> None:
 
 def main() -> None:
     """Ejecuta los experimentos sugeridos como guía de laboratorio."""
-    experiment_aliasing()
+    #experiment_aliasing()
     experiment_fir_filtering()
-    experiment_iir_response()
-    experiment_spectral_analysis()
+    #experiment_iir_response()
+    #experiment_spectral_analysis()
 
 
 if __name__ == "__main__":
