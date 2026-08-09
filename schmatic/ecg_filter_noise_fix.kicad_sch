@@ -22,6 +22,7 @@
         (pin passive line (at 0 -3.81 90) (length 1.27) (name "~" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
       )
     )
+	
     (symbol "Device:C" (pin_numbers hide) (pin_names (offset 0.254)) (in_bom yes) (on_board yes)
       (property "Reference" "C" (at 0.635 2.54 0) (effects (font (size 1.27 1.27)) (justify left)))
       (property "Value" "C" (at 0.635 -2.54 0) (effects (font (size 1.27 1.27)) (justify left)))
@@ -64,8 +65,8 @@
   (global_label "ADC_GPIO34" (shape output) (at 228.6 55.88 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)))
   (global_label "VREF_ADC" (shape output) (at 63.5 93.98 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)))
   (global_label "VREF_BUF" (shape output) (at 119.38 93.98 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)))
-  (global_label "+3V3_A" (shape power) (at 38.1 109.22 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)))
-  (global_label "AGND" (shape power) (at 38.1 124.46 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)))
+  (global_label "+3V3_A" (shape input) (at 38.1 109.22 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)))
+  (global_label "AGND" (shape input) (at 38.1 124.46 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)))
   (symbol (lib_id "Device:R") (at 35.56 55.88 90) (unit 1) (in_bom yes) (on_board yes) (uuid "11111111-1111-4111-8111-111111111111") (property "Reference" "RIN1" (at 35.56 50.8 90) (effects (font (size 1.27 1.27)))) (property "Value" "1 kΩ" (at 35.56 60.96 90) (effects (font (size 1.27 1.27)))))
   (symbol (lib_id "Device:C") (at 50.8 66.04 0) (unit 1) (in_bom yes) (on_board yes) (uuid "22222222-2222-4222-8222-222222222222") (property "Reference" "CIN1" (at 53.34 64.77 0) (effects (font (size 1.27 1.27)))) (property "Value" "4.7 nF C0G" (at 53.34 67.31 0) (effects (font (size 1.27 1.27)))))
   (symbol (lib_id "Device:R") (at 68.58 66.04 0) (unit 1) (in_bom yes) (on_board yes) (uuid "33333333-3333-4333-8333-333333333333") (property "Reference" "RB1" (at 71.12 64.77 0) (effects (font (size 1.27 1.27)))) (property "Value" "1 MΩ" (at 71.12 67.31 0) (effects (font (size 1.27 1.27)))))
